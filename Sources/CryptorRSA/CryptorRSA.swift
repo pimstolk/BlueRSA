@@ -276,7 +276,7 @@ public class CryptorRSA {
                 // The secret key is encrypted using the public key (evp_key can be an array of public keys)
                 // Here we are using just 1 public key
 				var status = EVP_SealInit(rsaEncryptCtx, .make(optional: enc), ekPtr, &encKeyLength, iv, &evp_key, 1)
-                
+                print(status) 
                 // SealInit should return the number of public keys that were input, here it is only 1
                 guard status == 1 else {
                     let source = "Encryption failed"
@@ -293,8 +293,9 @@ public class CryptorRSA {
                     return EVP_EncryptUpdate(rsaEncryptCtx, encrypted, &processedLength, plaintext, Int32(self.data.count))
                 })
                 encLength = processedLength
-                
+                print("encLength \(encLength)") 
                 status = EVP_SealFinal(rsaEncryptCtx, encrypted.advanced(by: Int(encLength)), &processedLength)
+		print("status \(status)")
                 guard status == 1 else {
                     let source = "Encryption failed"
                     if let reason = CryptorRSA.getLastError(source: source) {
@@ -305,6 +306,9 @@ public class CryptorRSA {
                 }
                 encLength += processedLength
                 
+		print("encLength \(Int(encLength))")
+		print("encKeyLength \(Int(encKeyLength))")
+		print("IVLength \(Int(IVLength))")
                 let cipher = Data(bytes: encrypted, count: Int(encLength))
                 let ekFinal = Data(bytes: ek!, count: Int(encKeyLength))
                 let ivFinal = Data(bytes: iv, count: Int(IVLength))
@@ -372,11 +376,16 @@ public class CryptorRSA {
                 
                 // Size of symmetric encryption
                 let encKeyLength = Int(EVP_PKEY_size(evp_key))
+		print("encKeyLength \(Int(EVP_PKEY_size(evp_key)))")
+
                 // Size of the corresponding cipher's IV
 				let encIVLength = Int(EVP_CIPHER_iv_length(.make(optional: encType)))
+			
+		print("encIVLength \(Int(EVP_CIPHER_iv_length(.make(optional: encType))))")
                 // Size of encryptedKey
                 let encryptedDataLength = Int(self.data.count) - encKeyLength - encIVLength
-                
+		print("encryptedDataLength \(Int(self.data.count) - encKeyLength - encIVLength)")
+
                 // Extract encryptedKey, encryptedData, encryptedIV from data
                 // self.data = encryptedKey + encryptedData + encryptedIV
                 let encryptedKey = self.data.subdata(in: 0..<encKeyLength)
